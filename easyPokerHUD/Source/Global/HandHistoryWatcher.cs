@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Timers;
@@ -8,21 +7,26 @@ namespace easyPokerHUD
 {
     public class HandHistoryWatcher : FileSystemWatcher
     {
-        Timer directorySearcher;
+        private Timer _directorySearcher;
         public string pMessage = "";
         public string nMessage = "";
 
-        private Environment.SpecialFolder windowsEnvironmentFolder;
-        private string pokerRoom;
-        private string handHistoryFolder;
+        private readonly Environment.SpecialFolder _windowsEnvironmentFolder;
+        private readonly string _pokerRoom;
+        private readonly string _handHistoryFolder;
 
-        //Enables the filewatcher with specified path
+        /// <summary>
+        /// Enables the filewatcher with specified path
+        /// </summary>
+        /// <param name="windowsEnvironmentFolder"></param>
+        /// <param name="pokerRoom"></param>
+        /// <param name="handHistoryFolder"></param>
         public HandHistoryWatcher(Environment.SpecialFolder windowsEnvironmentFolder, string pokerRoom, string handHistoryFolder)
         {
             //Set the global variables
-            this.windowsEnvironmentFolder = windowsEnvironmentFolder;
-            this.pokerRoom = pokerRoom;
-            this.handHistoryFolder = handHistoryFolder;
+            _windowsEnvironmentFolder = windowsEnvironmentFolder;
+            _pokerRoom = pokerRoom;
+            _handHistoryFolder = handHistoryFolder;
 
             //Set the filters for the filewatcher
             NotifyFilter = NotifyFilters.LastWrite;
@@ -30,80 +34,91 @@ namespace easyPokerHUD
             IncludeSubdirectories = true;
 
             //Enable Filewatcher
-            enableFileWatcher();
+            EnableFileWatcher();
         }
 
-        //Calls the enableFilewatcher method
-        private void tryEnablingFileWatcher(Object obj, EventArgs eve)
+        /// <summary>
+        /// Calls the enableFilewatcher method
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="eve"></param>
+        private void TryEnablingFileWatcher(object obj, EventArgs eve)
         {
-            enableFileWatcher();
+            EnableFileWatcher();
         }
 
-        //Checks, whether a valid path has been found and enables the filewatching
-        private void enableFileWatcher()
+        /// <summary>
+        /// Checks, whether a valid path has been found and enables the filewatching
+        /// </summary>
+        private void EnableFileWatcher()
         {
-            Path = getHandHistoryDirectory();
+            Path = GetHandHistoryDirectory();
 
             //Begin watching.
-            if (!Path.Equals(""))
+            if (!string.IsNullOrEmpty(Path))
             {
-                startFileWatcher();
+                StartFileWatcher();
             }
             else
             {
-                showErrorMessageAndStartdirectorySearcher();
+                ShowErrorMessageAndStartdirectorySearcher();
             }
         }
 
-        //Start the file watcher and dispose the directory searcher if necessary
-        private void startFileWatcher()
+        /// <summary>
+        /// Start the file watcher and dispose the directory searcher if necessary
+        /// </summary>
+        private void StartFileWatcher()
         {
-            if (directorySearcher != null)
-            {
-                directorySearcher.Dispose();
-            }
+            _directorySearcher?.Dispose();
             EnableRaisingEvents = true;
-            pMessage = pokerRoom;
+            pMessage = _pokerRoom;
             nMessage = "";
         }
 
-        //Accesses specified folders and looks for the handhistory
-        private string getHandHistoryDirectory()
+        /// <summary>
+        /// Accesses specified folders and looks for the handhistory
+        /// </summary>
+        /// <returns></returns>
+        private string GetHandHistoryDirectory()
         {
             try
             {
                 //Start in the user folder, where the poker room stores the hand history and move on from there
-                var startingDirectory = new DirectoryInfo(@Environment.GetFolderPath(windowsEnvironmentFolder));
-                var possibleDirectories = startingDirectory.GetDirectories().Where(s => s.ToString().Contains(pokerRoom)).OrderByDescending(f => f.LastWriteTime);
+                var startingDirectory = new DirectoryInfo(@Environment.GetFolderPath(_windowsEnvironmentFolder));
+                var possibleDirectories = startingDirectory.GetDirectories().Where(s => s.ToString().Contains(_pokerRoom)).OrderByDescending(f => f.LastWriteTime);
 
                 //Take the list of possible directories and return the most recent one, that contains the hand history folder
                 foreach (DirectoryInfo possibleDirectory in possibleDirectories)
                 {
                     try
                     {
-                        var probableDirectory = possibleDirectory.GetDirectories().Where(s => s.ToString().Contains(handHistoryFolder)).Single();
-                        return probableDirectory.FullName.ToString();
+                        var probableDirectory = possibleDirectory.GetDirectories().Single(s => s.ToString().Contains(_handHistoryFolder));
+                        return probableDirectory.FullName;
                     }
                     catch { /*Do nothing when no such directory is found */}
                 }
                 return "";
-            } catch
+            }
+            catch
             {
                 return "";
             }
         }
 
-        //Starts a directory searcher that keeps looking for the directory
-        private void showErrorMessageAndStartdirectorySearcher()
+        /// <summary>
+        /// Starts a directory searcher that keeps looking for the directory
+        /// </summary>
+        private void ShowErrorMessageAndStartdirectorySearcher()
         {
-            if (directorySearcher == null)
+            if (_directorySearcher == null)
             {
-                directorySearcher = new Timer();
-                showErrorMessageAndStartdirectorySearcher();
-                directorySearcher.Interval += 3000;
-                directorySearcher.Elapsed += tryEnablingFileWatcher;
-                directorySearcher.Start();
-                nMessage = pokerRoom;
+                _directorySearcher = new Timer();
+                ShowErrorMessageAndStartdirectorySearcher();
+                _directorySearcher.Interval += 3000;
+                _directorySearcher.Elapsed += TryEnablingFileWatcher;
+                _directorySearcher.Start();
+                nMessage = _pokerRoom;
             }
         }
     }

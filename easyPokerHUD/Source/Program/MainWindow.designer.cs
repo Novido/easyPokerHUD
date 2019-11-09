@@ -65,7 +65,7 @@
             this.donateButton.TabIndex = 8;
             this.donateButton.Text = "Make a donation with PayPal";
             this.donateButton.UseVisualStyleBackColor = false;
-            this.donateButton.Click += new System.EventHandler(this.donateButton_Click);
+            this.donateButton.Click += new System.EventHandler(this.DonateButton_Click);
             // 
             // logoPictureBox
             // 

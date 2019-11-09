@@ -1,32 +1,38 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace easyPokerHUD
 {
-    class MainMethods
+    internal static class MainMethods
     {
-        private static List<string> positiveMessages = new List<string>();
-        private static List<string> negativeMessages = new List<string>();
+        private static List<string> _positiveMessages = new List<string>();
+        private static List<string> _negativeMessages = new List<string>();
 
-        //Checks which pokerRooms are installed and activates their filewatchers
-        public static void activateFileWatchers()
+        /// <summary>
+        /// Checks which pokerRooms are installed and activates their filewatchers
+        /// </summary>
+        public static void ActivateFileWatchers()
         {
-            if (checkIfPokerRoomIsInstalled("PokerStars"))
+            if (CheckIfPokerRoomIsInstalled("PokerStars"))
             {
-                PokerStarsMain.activateFileWatcher();
+                PokerStarsMain.ActivateFileWatcher();
             }
-            if (checkIfPokerRoomIsInstalled("888poker"))
+            if (CheckIfPokerRoomIsInstalled("888poker"))
             {
-                EightPokerMain.activateFileWatcher();
+                EightPokerMain.ActivateFileWatcher();
             }
         }
 
-        //Accesses the uninstall list of windows and checks if it contains the pokerroom-name 
-        private static bool checkIfPokerRoomIsInstalled(string pokerRoom)
+        /// <summary>
+        /// Accesses the uninstall list of windows and checks if it contains the pokerroom-name
+        /// </summary>
+        /// <param name="pokerRoom"></param>
+        /// <returns></returns>
+        private static bool CheckIfPokerRoomIsInstalled(string pokerRoom)
         {
-            string registry_key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+            const string registry_key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
             using (Microsoft.Win32.RegistryKey key = Registry.LocalMachine.OpenSubKey(registry_key))
             {
                 foreach (string subkey_name in key.GetSubKeyNames())
@@ -50,64 +56,49 @@ namespace easyPokerHUD
             return false;
         }
 
-        //Opens the QuickStartGuide in a new browser tab
-        public static void openQuickStartGuide(Object obj, EventArgs e)
+        /// <summary>
+        /// Opens the QuickStartGuide in a new browser tab
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="e"></param>
+        public static void OpenQuickStartGuide(object obj, EventArgs e)
         {
             Process.Start("https://easypokerhud.com/quickstart-guides/");
         }
 
-        //Adds all status messages to two lists
-        public static void addMessagesToLists()
-        { 
-            positiveMessages = new List<string>();
-            negativeMessages = new List<string>();
+        /// <summary>
+        /// Adds all status messages to two lists
+        /// </summary>
+        public static void AddMessagesToLists()
+        {
+            _positiveMessages = new List<string>();
+            _negativeMessages = new List<string>();
 
             if (PokerStarsMain.handHistoryWatcher != null)
             {
-                positiveMessages.Add(PokerStarsMain.handHistoryWatcher.pMessage);
-                negativeMessages.Add(PokerStarsMain.handHistoryWatcher.nMessage);
+                _positiveMessages.Add(PokerStarsMain.handHistoryWatcher.pMessage);
+                _negativeMessages.Add(PokerStarsMain.handHistoryWatcher.nMessage);
             }
 
             if (EightPokerMain.handHistoryWatcher != null)
             {
-                positiveMessages.Add(EightPokerMain.handHistoryWatcher.pMessage);
-                negativeMessages.Add(EightPokerMain.handHistoryWatcher.nMessage);
+                _positiveMessages.Add(EightPokerMain.handHistoryWatcher.pMessage);
+                _negativeMessages.Add(EightPokerMain.handHistoryWatcher.nMessage);
             }
         }
 
-        //Builds a success and an error string to display in the main window
-        public static string[] getHUDStatusStrings()
+        /// <summary>
+        /// Builds a success and an error string to display in the main window
+        /// </summary>
+        /// <returns></returns>
+        public static string[] GetHUDStatusStrings()
         {
             //Get all status messages from every FileWatcher class
-            addMessagesToLists();
+            AddMessagesToLists();
 
             //Start with two empty strings and build them into properly formatted positive and negative messages
-            string positiveMessage = "";
-            string negativeMessage = "";
-            
-            foreach(string line in positiveMessages)
-            {
-                if (line != "")
-                {
-                    if (positiveMessage != "")
-                    {
-                        positiveMessage = positiveMessage + ", ";
-                    }
-                    positiveMessage = positiveMessage + line;
-                }
-            }
-
-            foreach (string line in negativeMessages)
-            {
-                if (line != "")
-                {
-                    if (negativeMessage != "")
-                    {
-                        negativeMessage = negativeMessage + ", ";
-                    }
-                    negativeMessage = negativeMessage + line;
-                }
-            }
+            string positiveMessage = string.Join(",", _positiveMessages);
+            string negativeMessage = string.Join(",", _negativeMessages);
 
             //Put both status strings into an array and return it
             string[] statusStrings = new string[2];

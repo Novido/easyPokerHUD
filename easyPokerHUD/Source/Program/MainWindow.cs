@@ -1,36 +1,39 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace easyPokerHUD
 {
     public partial class MainWindow : Form
     {
-        Timer fileWatcherStatusUpdateTimer = new Timer();
+        private readonly Timer _fileWatcherStatusUpdateTimer = new Timer();
 
         public MainWindow()
         {
             InitializeComponent();
 
             //Set the version number label to the current version
-            this.versionNumberLabel.Text = "v " + ApplicationUpdater.getCurrentProductVersion();
+            versionNumberLabel.Text = $"v {ApplicationUpdater.GetCurrentProductVersion()}";
 
             //Start the filewatchers
-            MainMethods.activateFileWatchers();
+            MainMethods.ActivateFileWatchers();
 
             //Start the timer that updates the console
-            fileWatcherStatusUpdateTimer.Tick += updateHUDStatus;
-            fileWatcherStatusUpdateTimer.Interval = 1500;
-            fileWatcherStatusUpdateTimer.Start();
+            _fileWatcherStatusUpdateTimer.Tick += UpdateHUDStatus;
+            _fileWatcherStatusUpdateTimer.Interval = 1500;
+            _fileWatcherStatusUpdateTimer.Start();
 
-            errorMessage.Click += MainMethods.openQuickStartGuide;
+            errorMessage.Click += MainMethods.OpenQuickStartGuide;
         }
 
-        //Gathers the current status of every filewatcher and displays it as a label 
-        public void updateHUDStatus(Object obj, EventArgs e)
+        /// <summary>
+        /// Gathers the current status of every filewatcher and displays it as a label
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="e"></param>
+        public void UpdateHUDStatus(object obj, EventArgs e)
         {
-            string[] statusStrings = MainMethods.getHUDStatusStrings();
+            string[] statusStrings = MainMethods.GetHUDStatusStrings();
 
             if (statusStrings[0].Equals(""))
             {
@@ -45,7 +48,7 @@ namespace easyPokerHUD
             {
                 errorMessage.Text = "";
                 errorMessage.Hide();
-                fileWatcherStatusUpdateTimer.Stop();
+                _fileWatcherStatusUpdateTimer.Stop();
             }
             else
             {
@@ -53,28 +56,33 @@ namespace easyPokerHUD
             }
         }
 
-        // Close every thread and write cached players to database
+        /// <summary>
+        /// Close every thread and write cached players to database
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             //buyMessage.Text = "Writing players to database";
-            PokerStarsMain.updatePlayersInDatabaseFromCache();
-            EightPokerMain.updatePlayersInDatabaseFromCache();
-           
+            PokerStarsMain.UpdatePlayersInDatabaseFromCache();
+            EightPokerMain.UpdatePlayersInDatabaseFromCache();
 
             try
             {
                 Environment.Exit(Environment.ExitCode);
-
-            } catch (Exception p)
+            }
+            catch (Exception p)
             {
                 Console.WriteLine("Block 1");
                 Console.WriteLine(p.Message);
             }
-            
         }
 
-        //Opens donation page
-        private void donateButton_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Opens donation page
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DonateButton_Click(object sender, EventArgs e)
         {
             Process.Start("https://easypokerhud.com/join-hof/");
         }

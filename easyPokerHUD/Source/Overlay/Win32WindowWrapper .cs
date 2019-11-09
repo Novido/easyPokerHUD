@@ -3,19 +3,18 @@ using System.Windows.Forms;
 
 namespace easyPokerHUD
 {
-    //Extends my handle, so I can use additional functions
+    /// <summary>
+    /// Extends my handle, so I can use additional functions
+    /// </summary>
     public class Win32WindowWrapper : IWin32Window
     {
-            private IntPtr handle;
+        private readonly IntPtr _handle;
 
-            public Win32WindowWrapper(IntPtr handle)
-            {
-                this.handle = handle;
-            }
+        public Win32WindowWrapper(IntPtr handle)
+        {
+            _handle = handle;
+        }
 
-            public IntPtr Handle
-            {
-                get { return handle; }
-            }
+        public IntPtr Handle => _handle;
     }
 }

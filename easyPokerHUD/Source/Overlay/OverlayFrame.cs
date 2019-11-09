@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Drawing;
-using System.Windows.Forms;
 using System.Runtime.InteropServices;
-using Win32Interop.WinHandles;
 using System.Threading;
+using System.Windows.Forms;
+using Win32Interop.WinHandles;
 
 namespace easyPokerHUD
 {
-    public partial class OverlayFrame : Form
+    internal class OverlayFrame : Form
     {
         protected RECT rect;
         protected RECT oldrect = new RECT();
@@ -16,7 +16,9 @@ namespace easyPokerHUD
         protected string tableWindowName;
         protected System.Windows.Forms.Timer overlayFrameUpdateTimer = new System.Windows.Forms.Timer();
 
-        //Structure needed for defining a window size
+        /// <summary>
+        /// Structure needed for defining a window size
+        /// </summary>
         protected struct RECT
         {
             public int left, top, right, bottom;
@@ -37,47 +39,59 @@ namespace easyPokerHUD
         [DllImport("user32.dll", SetLastError = true)]
         protected static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
 
-        //Starts the update timer for the overlay
-        protected void startOverlayFrameUpdateTimer()
+        /// <summary>
+        /// Starts the update timer for the overlay
+        /// </summary>
+        protected void StartOverlayFrameUpdateTimer()
         {
             overlayFrameUpdateTimer.Interval = 250;
-            overlayFrameUpdateTimer.Tick += new EventHandler(updateOverlayFrame);
+            overlayFrameUpdateTimer.Tick += UpdateOverlayFrame;
             overlayFrameUpdateTimer.Enabled = true;
         }
 
-        //Updates the size, transparency and position of the form
-        protected void updateOverlayFrame(Object obj, EventArgs eve)
+        /// <summary>
+        /// Updates the size, transparency and position of the form
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="eve"></param>
+        protected void UpdateOverlayFrame(object obj, EventArgs eve)
         {
             GetWindowRect(handle, out rect);
             if (!rect.Equals(oldrect))
             {
                 oldrect = rect;
-                setTransparency();
-                setSize();
-                setPosition();
+                SetTransparency();
+                SetSize();
+                SetPosition();
             }
         }
 
-        //Makes the form window transparent
-        protected void setTransparency()
+        /// <summary>
+        /// Makes the form window transparent
+        /// </summary>
+        protected void SetTransparency()
         {
-            this.BackColor = Color.White;
-            this.TransparencyKey = Color.White;
-            this.FormBorderStyle = FormBorderStyle.None;
-            int initialStyle = GetWindowLong(this.Handle, -20);
-            SetWindowLong(this.Handle, -20, initialStyle | 0x80000 | 0x20);
+            BackColor = Color.White;
+            TransparencyKey = Color.White;
+            FormBorderStyle = FormBorderStyle.None;
+            int initialStyle = GetWindowLong(Handle, -20);
+            SetWindowLong(Handle, -20, initialStyle | 0x80000 | 0x20);
         }
 
-        //Resizes the form to the size of the table-window
-        protected void setSize()
+        /// <summary>
+        /// Resizes the form to the size of the table-window
+        /// </summary>
+        protected void SetSize()
         {
-            this.Size = new Size(rect.right - rect.left, rect.bottom - rect.top);
-            this.Top = rect.top;
-            this.Left = rect.left;
+            Size = new Size(rect.right - rect.left, rect.bottom - rect.top);
+            Top = rect.top;
+            Left = rect.left;
         }
 
-        //Positions the form above the table-window
-        protected void setPosition()
+        /// <summary>
+        /// Positions the form above the table-window
+        /// </summary>
+        protected void SetPosition()
         {
             if (rect.left == -32000)
             {
@@ -90,28 +104,33 @@ namespace easyPokerHUD
             }
         }
 
-        //Sets the PokerStars table window as the owner of this window
+        /// <summary>
+        /// Sets the PokerStars table window as the owner of this window
+        /// </summary>
         protected void SetOwner()
         {
-            if (getTableWindowName() == null)
+            if (GetTableWindowName() == null)
             {
                 Close();
                 Thread.CurrentThread.Abort();
             }
-            handle = FindWindow(null, getTableWindowName());
+            handle = FindWindow(null, GetTableWindowName());
             Win32WindowWrapper wrapper = new Win32WindowWrapper(handle);
-            SetWindowLong(new HandleRef(this, this.Handle), -8, new HandleRef(wrapper, handle));
+            SetWindowLong(new HandleRef(this, Handle), -8, new HandleRef(wrapper, handle));
         }
 
-        //Gets the window name of specified table
-        protected string getTableWindowName()
+        /// <summary>
+        /// Gets the window name of specified table
+        /// </summary>
+        /// <returns></returns>
+        protected string GetTableWindowName()
         {
             try
             {
                 var window = TopLevelWindowUtils.FindWindow(wh => wh.GetWindowText().Contains(tableName) && !wh.GetWindowText().Contains("Lobby"));
-                string tableWindowName = window.GetWindowText();
-                return tableWindowName;
-            } catch
+                return window.GetWindowText();
+            }
+            catch
             {
                 return null;
             }

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace easyPokerHUD
 {
-    public class PokerRoomOverlay : OverlayFrame
+    internal class PokerRoomOverlay : OverlayFrame
     {
         protected string playerName;
         protected int tableSize;
@@ -28,7 +28,7 @@ namespace easyPokerHUD
         protected StatsWindow statsWindow10 = new StatsWindow();
         protected StatsWindow tableStatsWindow = new StatsWindow();
 
-        //These are needed for the table overview
+        // These are needed for the table overview
         protected int handsPlayedOnThisTable;
         protected int tableHandsPlayed;
         protected int tablePreflopCalls;
@@ -36,9 +36,15 @@ namespace easyPokerHUD
         protected int tablePostflopBetsAndRaises;
         protected int tablePostflopCallsChecksAndFolds;
 
-        //Is needed by the get scaling factor method
+        /// <summary>
+        /// Is needed by the get scaling factor method
+        /// </summary>
+        /// <param name="hdc"></param>
+        /// <param name="nIndex"></param>
+        /// <returns></returns>
         [DllImport("gdi32.dll")]
-        static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+        private static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+
         public enum DeviceCap
         {
             VERTRES = 10,
@@ -46,10 +52,10 @@ namespace easyPokerHUD
             LOGPIXELSY = 90,
         }
 
-        protected void prepareOverlay(string pTableName, int pTableSize, string pPlayerName)
+        protected void PrepareOverlay(string pTableName, int pTableSize, string pPlayerName)
         {
             //Set the basic functions
-            this.ShowInTaskbar = false;
+            ShowInTaskbar = false;
             tableName = pTableName;
             tableSize = pTableSize;
             playerName = pPlayerName;
@@ -57,16 +63,16 @@ namespace easyPokerHUD
 
             //Initialize the position of the overlay
             GetWindowRect(handle, out rect);
-            setTransparency();
-            setSize();
-            setPosition();
+            SetTransparency();
+            SetSize();
+            SetPosition();
 
             //Initialize the form
-            startOverlayFrameUpdateTimer();
+            StartOverlayFrameUpdateTimer();
 
             //Setup the stats windows
-            setupStatsWindows();
-            setStatsWindowsFontSize();
+            SetupStatsWindows();
+            SetStatsWindowsFontSize();
 
             //Setup the timers
             statsFetcherTimer.Interval = 500;
@@ -76,8 +82,10 @@ namespace easyPokerHUD
             controlSizeUpdateTimer.Enabled = true;
         }
 
-        //Sets the stats Windows up
-        protected void setupStatsWindows()
+        /// <summary>
+        /// Sets the stats Windows up
+        /// </summary>
+        protected void SetupStatsWindows()
         {
             //Set the seat numbers
             statsWindow1.seatNumber = 1;
@@ -106,29 +114,37 @@ namespace easyPokerHUD
             //Add all the statsWindows to the overlay
             foreach (StatsWindow statsWindow in statsWindowList)
             {
-                this.Controls.Add(statsWindow);
+                Controls.Add(statsWindow);
                 statsWindow.Visible = false;
+                statsWindow.tableLayoutPanel1.AutoSize = true;
             }
         }
 
         //Adjusts the font size according to the window size
-        protected void setStatsWindowsFontSize()
+        public void setStatsWindowsFontSize()
         {
-            float fontSize = this.Width / 99 /getScalingFactor();
-            float fontSizeForWindow = this.Width / 120;
+            float fontSize = this.Width / 128 /getScalingFactor(); //99
+            //float fontSizeForWindow = this.Width / 120; //120
+            FontFamily fontFamily = new FontFamily("Helvetica");
             foreach (StatsWindow statsWindow in statsWindowList)
             {
-                statsWindow.Font = new Font("Arial", fontSizeForWindow);
-                Font fontForTheStats = new Font("Arial", fontSize + 2, FontStyle.Bold);
+                //statsWindow.Font = new Font("Arial", fontSizeForWindow);
+                Font fontForTheStats = new Font(fontFamily, fontSize, FontStyle.Bold);
+                //Font fontForTheText = new Font(fontFamily, fontSize, FontStyle.Regular, GraphicsUnit.Point, 0);
+
                 statsWindow.VPIP.Font = fontForTheStats;
                 statsWindow.PFR.Font = fontForTheStats;
                 statsWindow.AFq.Font = fontForTheStats;
-                statsWindow.handsplayed.Font = new Font("Arial", fontSize + 2, FontStyle.Regular);
+                statsWindow.BB.Font = fontForTheStats;
+                statsWindow.Username.Font = fontForTheStats; // new Font("Arial", fontSize, FontStyle.Regular);
             }
         }
 
-        //Gets the scaling factor of the current dpi settings
-        protected float getScalingFactor()
+        /// <summary>
+        /// Gets the scaling factor of the current dpi settings
+        /// </summary>
+        /// <returns></returns>
+        protected float GetScalingFactor()
         {
             Graphics g = Graphics.FromHwnd(IntPtr.Zero);
             IntPtr desktop = g.GetHdc();
@@ -136,13 +152,18 @@ namespace easyPokerHUD
             int PhysicalScreenHeight = GetDeviceCaps(desktop, (int)DeviceCap.DESKTOPVERTRES);
             int logpixelsy = GetDeviceCaps(desktop, (int)DeviceCap.LOGPIXELSY);
             float screenScalingFactor = (float)PhysicalScreenHeight / (float)LogicalScreenHeight;
-            float dpiScalingFactor = (float)logpixelsy / (float)96;
+            float dpiScalingFactor = (float)logpixelsy / (float)96; //96;
 
             return dpiScalingFactor; // 1.25 = 125%
+            //return screenScalingFactor;
         }
 
-        //Prepares the player seat numbers according to the size of the table
-        protected List<Player> preparePlayerListForCorrectPositioning(List<Player> players)
+        /// <summary>
+        /// Prepares the player seat numbers according to the size of the table
+        /// </summary>
+        /// <param name="players"></param>
+        /// <returns></returns>
+        protected List<Player> PreparePlayerListForCorrectPositioning(List<Player> players)
         {
             while (!players.Find(p => p.name.Equals(playerName)).seat.Equals(tableSize - (tableSize / 2)))
             {
@@ -152,25 +173,29 @@ namespace easyPokerHUD
                     {
                         player.seat = 0;
                     }
-                    player.seat = player.seat + 1;
+                    player.seat++;
                 }
             }
             return players;
         }
 
-        //Populates the controls with the player infos
-        protected void populateStatsWindows(List<Player> players)
+        /// <summary>
+        /// Populates the controls with the player infos
+        /// </summary>
+        /// <param name="players"></param>
+        protected void PopulateStatsWindows(List<Player> players)
         {
             foreach (StatsWindow statsWindow in statsWindowList)
             {
                 try
                 {
                     var playerForThisSeat = players.Single(p => p.seat == statsWindow.seatNumber);
-                    statsWindow.populateStatsWindow(playerForThisSeat);
+                    statsWindow.PopulateStatsWindow(playerForThisSeat);
                     statsWindow.Visible = true;
                 }
-                catch
+                catch(InvalidOperationException)
                 {
+                    Console.Out.WriteLine("Hiding HUD for Seat " + statsWindow.seatNumber);
                     statsWindow.Visible = false;
                 }
             }
@@ -178,16 +203,15 @@ namespace easyPokerHUD
 
         private void InitializeComponent()
         {
-            this.SuspendLayout();
-            // 
+            SuspendLayout();
+            //
             // PokerRoomOverlay
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(278, 244);
-            this.Name = "PokerRoomOverlay";
-            this.ResumeLayout(false);
-
+            //
+            AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(278, 244);
+            Name = "PokerRoomOverlay";
+            ResumeLayout(false);
         }
     }
 }
